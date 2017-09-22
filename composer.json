@@ -1,0 +1,30 @@
+{
+    "name": "gguney/rbac",
+    "type": "library",
+    "description": "Role based access control for Laravel 5",
+    "keywords": ["Role", "Permission", "Access", "Control", "Laravel" ],
+    "homepage": "https://github.com/gguney/rbac",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Gokhan Guney",
+            "email": "gokhanguneygg@gmail.com",
+            "homepage": "http://gguney.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.6 || 7.0"
+    },
+    "require-dev": {
+        "php": ">=5.6 || 7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "GGuney\\Rbac\\": "src/"
+        }
+    }
+}
+
+
+
