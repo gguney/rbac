@@ -4,7 +4,7 @@ Another role based access control package for Laravel 5.
 
 ### Requirements
 
-- Barista works with PHP 5.6 or above.
+- RBAC works with PHP 5.6 or above.
 
 ### Installation
 

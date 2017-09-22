@@ -23,7 +23,17 @@
         "psr-4": {
             "GGuney\\Rbac\\": "src/"
         }
+    },
+    "extra": {
+    "laravel": {
+        "providers": [
+            "GGuney\\Rbac\\RbacServiceProvider"
+        ],
+        "aliases": {
+            "Rbac": "GGuney\\Rbac\\Facades\\Rbac"
+        }
     }
+}
 }
 
 
