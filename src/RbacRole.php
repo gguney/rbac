@@ -5,6 +5,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Mockery\Exception;
 
 trait RbacRole
 {
@@ -50,7 +51,9 @@ trait RbacRole
             }
         }
         $this->permissions()->attach($tmpPermissions);
-        Auth::user()->forgetPermissions();
+        if(Auth::check()){
+            Auth::user()->forgetPermissions();
+        }
     }
 
     public function detachCurrentPermissions(){

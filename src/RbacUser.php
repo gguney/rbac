@@ -43,6 +43,7 @@ trait RbacUser
             });
 
             $userRoles = Role::whereIn('id', $userRoles)->get();
+            $roles = [];
             foreach ($userRoles as $userRole) {
                 $roles[$userRole->id] = ['name' => $userRole->name, 'display_name' => $userRole->display_name];
             }
@@ -61,7 +62,6 @@ trait RbacUser
             $userRoles = $this->roles()->get();
 
             $userRoles = $userRoles->map(function ($role) {
-
                 return $role->pivot->role_id;
             });
 
