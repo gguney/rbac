@@ -21,7 +21,7 @@ class PermissionsTableSeeder extends Seeder
             $action = $route->getAction();
             if (array_key_exists('controller', $action)) {
                 if (str_contains($action['controller'], config('rbac.controller_path')) && !str_contains($action['controller'],
-                        'App\Http\Controllers\Auth')
+                        config('rbac.controller_path').'\Auth')
                 ) {
                     $actions->push($action);
                 }
@@ -35,7 +35,6 @@ class PermissionsTableSeeder extends Seeder
                 if (isset($action['as'])) {
                     $displayName = $action['as'];
                     $displayName = str_replace('.', ' ', $displayName);
-                    //$displayName = str_replace('_', ' ',snake_case(studly_case($displayName)));
                     $displayName = ucwords($displayName);
                 }
                 $permission = Permission::updateOrCreate([
@@ -56,8 +55,9 @@ class PermissionsTableSeeder extends Seeder
 
         $role = Role::firstOrCreate([
             'name'         => 'developer',
-            'display_name' => 'developer',
-            'description'  => 'developer'
+            'display_name' => 'Developer',
+            'description'  => 'developer',
+            'priority'  => '1'
         ]);
         $role->attachPermissions($permissions);
 
