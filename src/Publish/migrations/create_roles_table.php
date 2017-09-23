@@ -21,10 +21,7 @@ class CreateRolesTable extends Migration
                 $table->string('name')->unique();
                 $table->string('display_name')->nullable();
                 $table->text('description')->nullable();
-                $table->integer('created_by')->unsigned();
-                $table->integer('updated_by')->unsigned();
                 $table->timestamps();
-                $table->integer('deleted_by')->unsigned()->nullable();
                 $table->softDeletes();            });
         }
 
@@ -47,10 +44,7 @@ class CreateRolesTable extends Migration
                 $table->string('name')->nullable();
                 $table->string('display_name')->nullable();
                 $table->string('description')->nullable();
-                $table->integer('created_by')->unsigned();
-                $table->integer('updated_by')->unsigned();
                 $table->timestamps();
-                $table->integer('deleted_by')->unsigned()->nullable();
                 $table->softDeletes();
             });
         }

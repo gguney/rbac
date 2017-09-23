@@ -20,7 +20,7 @@ class PermissionsTableSeeder extends Seeder
         $routes->each(function ($route) use ($actions) {
             $action = $route->getAction();
             if (array_key_exists('controller', $action)) {
-                if (str_contains($action['controller'], 'App\Http\Controllers') && !str_contains($action['controller'],
+                if (str_contains($action['controller'], config('rbac.controller_path')) && !str_contains($action['controller'],
                         'App\Http\Controllers\Auth')
                 ) {
                     $actions->push($action);
@@ -44,9 +44,7 @@ class PermissionsTableSeeder extends Seeder
                     'description'  => (isset($action['as']) && strpos($action['as'], '.')) ? explode(".",
                         $action['as'])[0] : null,
                     'display_name' => $displayName,
-                    'created_by'   => 1,
                     'created_at'   => \Carbon\Carbon::now(),
-                    'updated_by'   => 1,
                     'updated_at'   => \Carbon\Carbon::now(),
                 ]);
 
@@ -55,13 +53,12 @@ class PermissionsTableSeeder extends Seeder
                 $permissions->push($permission->id);
             }
         });
-        $role = Role::where('id', 1)->first();
-        /*
+
         $role = Role::firstOrCreate([
             'name'         => 'developer',
             'display_name' => 'developer',
             'description'  => 'developer'
-        ]);*/
+        ]);
         $role->attachPermissions($permissions);
 
         User::where('id', 1)->first()->attachRole($role);
