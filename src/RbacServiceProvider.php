@@ -24,7 +24,10 @@ class RbacServiceProvider extends ServiceProvider
         Event::listen('Illuminate\Auth\Events\Login', LoginListener::class);
         $this->bladeDirectives();
 
-        //$this->publishes([__DIR__ . '/Publish/config/rbac.php' => config_path('rbac.php'),]);
+        $this->publishes([__DIR__ . '/Publish/seeds/PermissionsTableSeeder.php' => database_path('/seeds/PermissionsTableSeeder.php'),]);
+        $this->publishes([__DIR__ . '/Publish/migrations/create_roles_table.php' => database_path('/migrations/2017_05_11_000000_create_roles_table.php'),]);
+        $this->publishes([__DIR__ . '/Publish/models/' => app_path('/models'),]);
+
     }
 
     public function bladeDirectives(){
