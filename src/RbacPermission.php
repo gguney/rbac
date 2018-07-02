@@ -16,7 +16,7 @@ trait RbacPermission{
         return $this->belongsToMany(Role::class, 'role_permission', 'permission_id', 'role_id');
     }
     
-    public function syncPermissions()
+    public static function syncPermissions()
     {
         $permissions = collect();
         $actions = collect();
