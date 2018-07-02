@@ -2,6 +2,7 @@
 namespace GGuney\Rbac;
 
 use App\Models\Role;
+use App\Models\Permission;
 use Illuminate\Support\Facades\Route;
 
 trait RbacPermission{
