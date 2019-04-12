@@ -14,7 +14,7 @@ trait RbacRole
 
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'user_role', 'user_id', 'role_id');
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
     }
 
     /**
@@ -24,7 +24,7 @@ trait RbacRole
      */
     public function users()
     {
-        return $this->belongsToMany(User::class, 'user_role', 'role_id', 'user_id');
+        return $this->belongsToMany(User::class, 'role_user', 'role_id', 'user_id');
     }
 
     /**
@@ -34,7 +34,7 @@ trait RbacRole
      */
     public function permissions()
     {
-        return $this->belongsToMany(Permission::class, 'role_permission', 'role_id', 'permission_id');
+        return $this->belongsToMany(Permission::class, 'permission_role', 'role_id', 'permission_id');
     }
 
     public function attachPermissions($permissions = null){

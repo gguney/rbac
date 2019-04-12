@@ -12,11 +12,11 @@ trait RbacUser
 
     protected $permissions;
     protected $roles;
-    private $time = 60;
+    private $time = 600;
 
     public function roles()
     {
-        return $this->belongsToMany(Role::class, 'user_role', 'user_id', 'role_id');
+        return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
     }
 
     public function forgetRoles(){
@@ -123,6 +123,7 @@ trait RbacUser
 
     public function hasAccessTo($controller)
     {
+        $this->getRoles();
         if (($this->permissions !== null)) {
             foreach ($this->permissions as $permission) {
                 if ($permission['action'] == $controller) {
@@ -135,6 +136,7 @@ trait RbacUser
 
     public function hasRole($roleCodeName)
     {
+        $this->getRoles();
         if (($this->roles !== null)) {
             foreach ($this->roles as $role) {
                 if(is_array($roleCodeName) && in_array($role['name'], $roleCodeName) ){
@@ -150,6 +152,7 @@ trait RbacUser
 
     public function permittedTo($controllerName)
     {
+        $this->getPermissions();
         if (($this->permissions !== null) ) {
             foreach ($this->permissions as $permission) {
                 if ($permission['name'] == $controllerName) {
