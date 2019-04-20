@@ -11,7 +11,7 @@ trait RbacUser
 {
 
     protected $permissions;
-    protected $roles;
+    protected $cachedRoles;
     private $time = 600;
 
     public function roles()
@@ -34,7 +34,7 @@ trait RbacUser
         $cacheKey = config('rbac.user_roles_cache_key');
         $cached = Cache::tags([$cacheKey])->get($this->id);
         if ($cached) {
-            $this->roles = Cache::tags([$cacheKey])->get($this->id);
+            $this->cachedRoles = Cache::tags([$cacheKey])->get($this->id);
         } else {
             $userRoles = $this->roles()->get();
 
@@ -47,7 +47,7 @@ trait RbacUser
             foreach ($userRoles as $userRole) {
                 $roles[$userRole->id] = ['name' => $userRole->name, 'display_name' => $userRole->display_name];
             }
-            $this->roles = $roles;
+            $this->cachedRoles = $roles;
             Cache::tags([$cacheKey])->put($this->id, $roles, $this->time);
         }
     }
@@ -123,7 +123,7 @@ trait RbacUser
 
     public function hasAccessTo($controller)
     {
-        $this->getRoles();
+        $this->getPermissions();
         if (($this->permissions !== null)) {
             foreach ($this->permissions as $permission) {
                 if ($permission['action'] == $controller) {
@@ -137,8 +137,8 @@ trait RbacUser
     public function hasRole($roleCodeName)
     {
         $this->getRoles();
-        if (($this->roles !== null)) {
-            foreach ($this->roles as $role) {
+        if (($this->cachedRoles !== null)) {
+            foreach ($this->cachedRoles as $role) {
                 if(is_array($roleCodeName) && in_array($role['name'], $roleCodeName) ){
                     return true;
                 }
