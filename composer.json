@@ -1,8 +1,8 @@
 {
     "name": "gguney/rbac",
     "type": "library",
-    "description": "Role based access control for Laravel 5",
-    "keywords": ["Role", "Permission", "Access", "Control", "Laravel" ],
+    "description": "Role based access control for company and module based application.",
+    "keywords": ["Role", "Permission", "Access", "Control", "Laravel", "Company", "Module" ],
     "homepage": "https://github.com/gguney/rbac",
     "license": "MIT",
     "minimum-stability": "dev",

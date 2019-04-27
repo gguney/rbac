@@ -3,20 +3,26 @@
 namespace GGuney\Rbac;
 
 use App\Models\Permission;
+use App\Models\Company;
 use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 
 trait RbacUser
 {
-
-    protected $permissions;
+    protected $cachedPermissions;
     protected $cachedRoles;
-    private $time = 600;
+    protected $cachedCompany;
+    private $time = 60000; //seconds
 
     public function roles()
     {
         return $this->belongsToMany(Role::class, 'user_role', 'user_id', 'role_id');
+    }
+
+    public function company()
+    {
+        return $this->hasOne(\App\Models\Company::class, 'id', 'company_id');
     }
 
     public function forgetRoles(){
@@ -28,6 +34,20 @@ trait RbacUser
         $cacheKey = config('rbac.user_permissions_cache_key');
         Cache::tags([$cacheKey])->flush();
     }
+    public function getCompany()
+    {
+        $cacheKey = config('rbac.user_company_cache_key');
+        $cached = Cache::tags([$cacheKey])->get($this->id);
+        if ($cached) {
+            $this->cachedCompany = Cache::tags([$cacheKey])->get($this->id);
+        } else {
+            $company = $this->company;
+            $this->cachedCompany = $company;
+            Cache::tags([$cacheKey])->put($this->id, $company, $this->time);
+        }
+
+        return $this->cachedCompany;
+    }
 
     public function getRoles()
     {
@@ -37,50 +57,31 @@ trait RbacUser
             $this->cachedRoles = Cache::tags([$cacheKey])->get($this->id);
         } else {
             $userRoles = $this->roles()->get();
-
-            $userRoles = $userRoles->map(function ($role) {
-                return $role->pivot->role_id;
-            });
-
-            $userRoles = Role::whereIn('id', $userRoles)->get();
-            $roles = [];
-            foreach ($userRoles as $userRole) {
-                $roles[$userRole->id] = ['name' => $userRole->name, 'display_name' => $userRole->display_name];
-            }
-            $this->cachedRoles = $roles;
-            Cache::tags([$cacheKey])->put($this->id, $roles, $this->time);
+            $this->cachedRoles = $userRoles;
+            Cache::tags([$cacheKey])->put($this->id, $userRoles, $this->time);
         }
+
+        return $this->cachedRoles;
     }
 
     public function getPermissions()
     {
         $cacheKey = config('rbac.user_permissions_cache_key');
         $cached = Cache::tags([$cacheKey])->get($this->id);
-        if ($cached) {
-            $this->permissions = Cache::tags([$cacheKey])->get($this->id);
+        if (!$cached) {
+            $this->cachedPermissions = Cache::tags([$cacheKey])->get($this->id);
         } else {
-            $userRoles = $this->roles()->get();
-
-            $userRoles = $userRoles->map(function ($role) {
-                return $role->pivot->role_id;
-            });
-
-            $rolePermissions = Role::with('permissions')->whereIn('id', $userRoles)->get();
+            $userRoles = $this->getRoles();
             $userPermissions = collect();
-            foreach ($rolePermissions as $rolePermission) {
-                $userPermissions = $userPermissions->merge($rolePermission->permissions);
+            foreach ($userRoles as $userRole) {
+                $permissions = $userRole->getPermissions();
+                $userPermissions = $userPermissions->merge($permissions);
             }
-            $permissions = null;
-            foreach ($userPermissions as $userPermission) {
-                $permissions[$userPermission->id] = [
-                    'action'      => $userPermission->action,
-                    'name' => $userPermission->name
-                ];
-            }
-            $this->permissions = $permissions;
-            Cache::tags([$cacheKey])->put($this->id, $permissions, $this->time);
+            $this->cachedPermissions = $userPermissions;
+            Cache::tags([$cacheKey])->put($this->id, $userPermissions, $this->time);
         }
 
+        return $this->cachedPermissions;
     }
 
     public function attachRole($role)
@@ -92,7 +93,6 @@ trait RbacUser
         if (!in_array($role->id, $currentRoles)) {
             $this->roles()->attach($role);
         }
-
     }
 
     public function detachCurrentRoles()

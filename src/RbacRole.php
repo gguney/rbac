@@ -5,12 +5,13 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 use Mockery\Exception;
 
 trait RbacRole
 {
-
-    private $permissions;
+    private $cachedPermissions;
+    private $time = 60000;
 
     public function roles()
     {
@@ -35,6 +36,21 @@ trait RbacRole
     public function permissions()
     {
         return $this->belongsToMany(Permission::class, 'role_permission', 'role_id', 'permission_id');
+    }
+
+    public function getPermissions()
+    {
+        $cacheKey = config('rbac.role_permissions_cache_key');
+        $cached = Cache::tags([$cacheKey])->get($this->id);
+        if ($cached) {
+            $this->cachedPermissions = Cache::tags([$cacheKey])->get($this->id);
+        } else {
+            $permissions = $this->permissions()->get();
+            $this->cachedPermissions = $permissions;
+            Cache::tags([$cacheKey])->put($this->id, $permissions, $this->time);
+        }
+
+        return $this->cachedPermissions;
     }
 
     public function attachPermissions($permissions = null){
