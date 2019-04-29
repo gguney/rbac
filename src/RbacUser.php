@@ -68,7 +68,7 @@ trait RbacUser
     {
         $cacheKey = config('rbac.user_permissions_cache_key');
         $cached = Cache::tags([$cacheKey])->get($this->id);
-        if (!$cached) {
+        if ($cached) {
             $this->cachedPermissions = Cache::tags([$cacheKey])->get($this->id);
         } else {
             $userRoles = $this->getRoles();
