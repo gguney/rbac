@@ -6,26 +6,28 @@ use Illuminate\Support\Facades\Cache;
 
 trait RbacCompany
 {
-    protected $cachedModules;
     private $time = 60000; //seconds
 
     public function getModules()
     {
-        $cacheKey = config('rbac.company_modules_cache_key');
-        $cached = Cache::tags([$cacheKey])->get($this->id);
-        if ($cached) {
-            $this->cachedModules = Cache::tags([$cacheKey])->get($this->id);
-        } else {
-            $companyModules = $this->modules()->get();
-            $this->cachedModules = $companyModules;
-            Cache::tags([$cacheKey])->put($this->id, $companyModules, $this->time);
+        $cacheKey = config('rbac.company_modules_cache_key', 'rbac_company_modules');
+        $data = Cache::tags([$cacheKey])->get($this->id);
+        if (!$data) {
+            $data = $this->modules()->get();
+            Cache::tags([$cacheKey])->put($this->id, $data, $this->time);
         }
 
-        return $this->cachedModules;
+        return $data;
+    }
+
+    public function syncModules($moduleIds)
+    {
+        $this->modules()->sync($moduleIds);
+        $this->forgetModules();
     }
 
     public function forgetModules(){
-        $cacheKey = config('rbac.company_modules_cache_key');
+        $cacheKey = config('rbac.company_modules_cache_key', 'rbac_company_modules');
         Cache::tags([$cacheKey])->flush();
     }
 }

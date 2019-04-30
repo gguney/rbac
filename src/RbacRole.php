@@ -40,42 +40,25 @@ trait RbacRole
 
     public function getPermissions()
     {
-        $cacheKey = config('rbac.role_permissions_cache_key');
-        $cached = Cache::tags([$cacheKey])->get($this->id);
-        if ($cached) {
-            $this->cachedPermissions = Cache::tags([$cacheKey])->get($this->id);
-        } else {
-            $permissions = $this->permissions()->get();
-            $this->cachedPermissions = $permissions;
-            Cache::tags([$cacheKey])->put($this->id, $permissions, $this->time);
+        $cacheKey = config('rbac.role_permissions_cache_key', 'rbac_role_permissions');
+        $data = Cache::tags([$cacheKey])->get($this->id);
+        if (!$data) {
+            $data = $this->permissions()->get();
+            Cache::tags([$cacheKey])->put($this->id, $data, $this->time);
         }
 
-        return $this->cachedPermissions;
+        return $data;
     }
 
-    public function attachPermissions($permissions = null){
-        $currentPermissions = $this->permissions()->get()->map(function($permission){
-            return $permission->id;
-        })->toArray();
-        if(!isset($permissions)){
-            return true;
-        }
-        $tmpPermissions = [];
-        foreach($permissions as $permission){
-            if(!in_array($permission, $currentPermissions)){
-                $tmpPermissions[] = $permission;
-            }
-        }
-        $this->permissions()->attach($tmpPermissions);
-        if(Auth::check()){
-            Auth::user()->forgetPermissions();
-        }
+    public function forgetPermissions()
+    {
+        $cacheKey = config('rbac.role_permissions_cache_key', 'rbac_role_permissions');
+        Cache::tags([$cacheKey])->flush();
     }
 
-    public function detachCurrentPermissions(){
-        $currentPermissions = $this->permissions()->get()->map(function($permission){
-            return $permission->id;
-        })->toArray();
-        $this->permissions()->detach($currentPermissions);
+    public function syncPermissions($permissionIds)
+    {
+        $this->permissions()->attach($permissionIds);
+        $this->forgetPermissions();
     }
 }

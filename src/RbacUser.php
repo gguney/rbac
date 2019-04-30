@@ -10,9 +10,6 @@ use Illuminate\Support\Facades\Cache;
 
 trait RbacUser
 {
-    protected $cachedPermissions;
-    protected $cachedRoles;
-    protected $cachedCompany;
     private $time = 60000; //seconds
 
     public function roles()
@@ -26,119 +23,109 @@ trait RbacUser
     }
 
     public function forgetRoles(){
-        $cacheKey = config('rbac.user_roles_cache_key');
-        Cache::tags([$cacheKey])->flush();
+        $cacheKey = config('rbac.user_roles_cache_key', 'rbac_user_roles');
+        $this->forgetCache($cacheKey);
     }
 
     public function forgetPermissions(){
-        $cacheKey = config('rbac.user_permissions_cache_key');
+        $cacheKey = config('rbac.user_permissions_cache_key', 'rbac_user_permissions');
+        $this->forgetCache($cacheKey);
+    }
+
+    public function forgetCompany(){
+        $cacheKey = config('rbac.user_company_cache_key', 'rbac_user_company');
+        $this->forgetCache($cacheKey);
+    }
+
+    private function forgetCache($cacheKey){
         Cache::tags([$cacheKey])->flush();
     }
+
     public function getCompany()
     {
-        $cacheKey = config('rbac.user_company_cache_key');
-        $cached = Cache::tags([$cacheKey])->get($this->id);
-        if ($cached) {
-            $this->cachedCompany = Cache::tags([$cacheKey])->get($this->id);
-        } else {
-            $company = $this->company;
-            $this->cachedCompany = $company;
-            Cache::tags([$cacheKey])->put($this->id, $company, $this->time);
+        $cacheKey = config('rbac.user_company_cache_key', 'rbac_user_company');
+        $data = Cache::tags([$cacheKey])->get($this->id);
+        if (!$data) {
+            $data = $this->company;
+            Cache::tags([$cacheKey])->put($this->id, $data, $this->time);
         }
 
-        return $this->cachedCompany;
+        return $data;
     }
 
     public function getRoles()
     {
-        $cacheKey = config('rbac.user_roles_cache_key');
-        $cached = Cache::tags([$cacheKey])->get($this->id);
-        if ($cached) {
-            $this->cachedRoles = Cache::tags([$cacheKey])->get($this->id);
-        } else {
-            $userRoles = $this->roles()->get();
-            $this->cachedRoles = $userRoles;
-            Cache::tags([$cacheKey])->put($this->id, $userRoles, $this->time);
+        $cacheKey = config('rbac.user_roles_cache_key', 'rbac_user_roles');
+        $data = Cache::tags([$cacheKey])->get($this->id);
+        if (!$data) {
+            $data = $this->roles()->get();
+            Cache::tags([$cacheKey])->put($this->id, $data, $this->time);
         }
 
-        return $this->cachedRoles;
+        return $data;
     }
 
     public function getPermissions()
     {
-        $cacheKey = config('rbac.user_permissions_cache_key');
-        $cached = Cache::tags([$cacheKey])->get($this->id);
-        if ($cached) {
-            $this->cachedPermissions = Cache::tags([$cacheKey])->get($this->id);
-        } else {
+        $cacheKey = config('rbac.user_permissions_cache_key', 'rbac_user_permissions');
+        $data = Cache::tags([$cacheKey])->get($this->id);
+        if (!$data) {
             $userRoles = $this->getRoles();
             $userPermissions = collect();
             foreach ($userRoles as $userRole) {
                 $permissions = $userRole->getPermissions();
                 $userPermissions = $userPermissions->merge($permissions);
             }
-            $this->cachedPermissions = $userPermissions;
-            Cache::tags([$cacheKey])->put($this->id, $userPermissions, $this->time);
+            $data = $userPermissions;
+            Cache::tags([$cacheKey])->put($this->id, $data, $this->time);
         }
 
-        return $this->cachedPermissions;
+        return $data;
     }
 
-    public function attachRole($role)
+    public function syncRoles($roleIds)
     {
-        $currentRoles = $this->roles()->get()->map(function ($role) {
-            return $role->id;
-        })->toArray();
-
-        if (!in_array($role->id, $currentRoles)) {
-            $this->roles()->attach($role);
-        }
+        $this->roles()->sync($roleIds);
+        $this->forgetRoles();
+        $this->forgetPermissions();
     }
 
-    public function detachCurrentRoles()
+    public function hasModule($controller)
     {
-        $currentRoles = $this->roles()->get()->map(function ($role) {
-            return $role->id;
-        })->toArray();
-        $this->roles()->detach($currentRoles);
-    }
-
-    public function attachRoles($roles = null)
-    {
-        $currentRoles = $this->roles()->get()->map(function ($role) {
-            return $role->id;
-        })->toArray();
-        if(!isset($roles) || empty($roles)){
-            return true;
-        }
-        $tmpRoles = [];
-        foreach ($roles as $role){
-            if (!in_array($role, $currentRoles)) {
-                $tmpRoles[] = $role;
+        $company = $this->getCompany();
+        if($company){
+            $modules = $company->getModules();
+            if (($modules !== null)) {
+                foreach ($modules as $module) {
+                    if ($module == $controller) {
+                        return true;
+                    }
+                }
             }
         }
-        $this->roles()->attach($tmpRoles);
-        $this->forgetRoles();
+
+        return false;
     }
 
-    public function hasAccessTo($controller)
+    public function hasPermission($controller)
     {
-        $this->getPermissions();
-        if (($this->permissions !== null)) {
-            foreach ($this->permissions as $permission) {
+        $permissions = $this->getPermissions();
+        if (($permissions !== null)) {
+            foreach ($permissions as $permission) {
                 if ($permission['action'] == $controller) {
                     return true;
                 }
             }
         }
+
         return false;
     }
 
     public function hasRole($roleCodeName)
     {
-        $this->getRoles();
-        if (($this->cachedRoles !== null)) {
-            foreach ($this->cachedRoles as $role) {
+        $roles = $this->getRoles();
+        if (($roles !== null)) {
+            foreach ($roles as $role) {
                 if(is_array($roleCodeName) && in_array($role['name'], $roleCodeName) ){
                     return true;
                 }
@@ -147,19 +134,21 @@ trait RbacUser
                 }
             }
         }
+
         return false;
     }
 
     public function permittedTo($controllerName)
     {
-        $this->getPermissions();
-        if (($this->permissions !== null) ) {
-            foreach ($this->permissions as $permission) {
+        $permissions = $this->getPermissions();
+        if (($permissions !== null) ) {
+            foreach ($permissions as $permission) {
                 if ($permission['name'] == $controllerName) {
                     return true;
                 }
             }
         }
+
         return false;
     }
 
