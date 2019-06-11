@@ -97,7 +97,7 @@ trait RbacUser
             $modules = $company->getModules();
             if (($modules !== null)) {
                 foreach ($modules as $module) {
-                    if ($module == $controller) {
+                    if ($module->name == $controller) {
                         return true;
                     }
                 }
