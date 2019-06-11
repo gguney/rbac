@@ -112,7 +112,7 @@ trait RbacUser
         $permissions = $this->getPermissions();
         if (($permissions !== null)) {
             foreach ($permissions as $permission) {
-                if ($permission['full_name'] == $controller) {
+                if ($permission['controller'] == $controller) {
                     return true;
                 }
             }
